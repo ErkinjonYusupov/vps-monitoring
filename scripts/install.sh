@@ -207,7 +207,7 @@ Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
 EnvironmentFile=$ENV_FILE
-ExecStart=$GUNICORN_BIN -k gthread --threads 8 -b ${ENV_HOST}:${ENV_PORT} app:app
+ExecStart=$GUNICORN_BIN -k gthread --threads 2 -b ${ENV_HOST}:${ENV_PORT} app:app
 Restart=always
 RestartSec=5
 KillMode=mixed
@@ -222,6 +222,12 @@ sudo systemctl daemon-reload
 sudo systemctl enable "$SERVICE_NAME" >/dev/null 2>&1 || true
 sudo systemctl restart "$SERVICE_NAME"
 ok "Service $SERVICE_NAME enabled + started"
+
+# Sudoers: restart without password (for in-app update button)
+echo "$USER ALL=(ALL) NOPASSWD: /bin/systemctl restart ${SERVICE_NAME}" \
+  | sudo tee /etc/sudoers.d/vps-monitor >/dev/null
+sudo chmod 440 /etc/sudoers.d/vps-monitor
+ok "Sudoers rule added (restart without password)"
 
 # ────────────────────────────────────────────────────────────
 # Verify app

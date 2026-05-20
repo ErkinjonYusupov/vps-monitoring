@@ -1,8 +1,10 @@
-import os, time, shutil, subprocess, socket, json, hmac, hashlib, urllib.parse
+import os, time, shutil, subprocess, socket, json, hmac, hashlib, urllib.parse, threading
 from functools import wraps
 from flask import Flask, jsonify, render_template, request, Response
 from flask_sock import Sock
 import pty, select, fcntl, termios, struct, signal
+
+INSTALL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 sock = Sock(app)
@@ -165,6 +167,21 @@ def debug(): return render_template('debug.html')
 @app.route('/api/metrics')
 @require_auth
 def api_metrics(): return jsonify(metrics())
+
+@app.route('/api/update', methods=['POST'])
+@require_auth
+def api_update():
+    def do_update():
+        time.sleep(0.5)
+        try:
+            subprocess.run(['git', 'pull', 'origin', 'main'], cwd=INSTALL_DIR, timeout=30)
+            venv_pip = os.path.join(INSTALL_DIR, '.venv', 'bin', 'pip')
+            subprocess.run([venv_pip, 'install', '-q', '-r', os.path.join(INSTALL_DIR, 'requirements.txt')], timeout=60)
+            subprocess.run(['sudo', 'systemctl', 'restart', 'telegram-vps-monitor'], timeout=10)
+        except Exception as e:
+            print(f'[UPDATE] Error: {e}')
+    threading.Thread(target=do_update, daemon=True).start()
+    return jsonify({'ok': True, 'msg': 'Yangilanish boshlandi, 5 soniyada qayta yuklanadi...'})
 
 @app.route('/login', methods=['POST'])
 def login():

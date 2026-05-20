@@ -73,6 +73,7 @@
   <div class="termBtns">
     <button class="termBtn" type="button" onclick="openTerm()">⌨ Terminal</button>
     <button class="termBtn claude" type="button" onclick="openTerm('claude')">✦ Claude</button>
+    <button class="termBtn" type="button" id="updateBtn" onclick="doUpdate()" style="background:rgba(40,80,40,0.5);border-color:#3a6b3a">↻ Yangilash</button>
   </div>
 
   <section class="panel">
@@ -178,6 +179,20 @@ async function load(){
   }catch(e){
     console.error('[LOAD] Error:', e);
     $('health').textContent='XATO';$('health').className='status danger';
+  }
+}
+
+async function doUpdate(){
+  const btn=$('updateBtn');
+  btn.textContent='Yangilanmoqda...';
+  btn.disabled=true;
+  try{
+    await fetch('/api/update',{method:'POST',headers:{'X-Telegram-Init-Data':TELEGRAM_INIT_DATA}});
+    btn.textContent='✓ Qayta yuklanadi...';
+    setTimeout(()=>location.reload(), 6000);
+  }catch(e){
+    btn.textContent='↻ Yangilash';
+    btn.disabled=false;
   }
 }
 
