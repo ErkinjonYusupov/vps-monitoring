@@ -11,7 +11,7 @@ set -euo pipefail
 # ────────────────────────────────────────────────────────────
 # Config
 # ────────────────────────────────────────────────────────────
-REPO_URL="https://github.com/SIZNING_USERNAME/REPO_NOMI.git"
+REPO_URL="https://github.com/ErkinjonYusupov/vps-monitoring.git"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/telegram-vps-monitor-terminal-ai-miniapp}"
 SERVICE_NAME="telegram-vps-monitor"
 DEFAULT_PORT="${PORT:-8787}"
@@ -245,65 +245,139 @@ step "HTTPS setup"
 
 echo
 c_dim "  Telegram Mini App requires public HTTPS. Choose a method:"
-echo "  1) Cloudflare Tunnel  (recommended — no open ports, free SSL)"
-echo "  2) Nginx + Let's Encrypt  (requires port 80/443 open, domain A record → VPS IP)"
-echo "  3) Skip  (set up HTTPS manually later)"
+echo "  1) Nginx + Cloudflare Auto-SSL  ★ (domen + API token → tayyor, tavsiya)"
+echo "  2) Cloudflare Tunnel            (port ochiq bo'lishi shart emas)"
+echo "  3) Nginx + Let's Encrypt        (port 80/443 ochiq, CF proxy o'chiq bo'lishi kerak)"
+echo "  4) Skip                         (keyinroq o'zingiz sozlaysiz)"
 echo
-read -rp "  Your choice [1/2/3]: " HTTPS_CHOICE
+read -rp "  Your choice [1/2/3/4]: " HTTPS_CHOICE
 HTTPS_CHOICE="${HTTPS_CHOICE:-1}"
 
 PUBLIC_URL=""
 
-# ── Option 1: Cloudflare Tunnel ──────────────────────────────
+# ── Option 1: Nginx + Cloudflare DNS Auto-SSL ────────────────
 if [[ "$HTTPS_CHOICE" == "1" ]]; then
-  step "Setting up Cloudflare Tunnel"
+  step "Nginx + Cloudflare Auto-SSL"
 
-  # Install cloudflared
+  echo
+  c_dim "  Cloudflare API token olish:"
+  c_dim "  dash.cloudflare.com → My Profile → API Tokens → Create Token"
+  c_dim "  → 'Edit zone DNS' shablonini tanlang → domeningizni tanlang → Create"
+  echo
+
+  ask "Domeningiz (masalan: vps.example.com)" CF_AUTO_DOMAIN
+  ask_secret "Cloudflare API Token" CF_API_TOKEN
+  ask "Email (Let's Encrypt xabarlari uchun)" CF_EMAIL
+
+  # Install nginx + certbot + cloudflare dns plugin
+  sudo apt-get update -qq
+  sudo apt-get install -y nginx certbot python3-certbot-dns-cloudflare >/dev/null
+  ok "nginx + certbot + dns-cloudflare o'rnatildi"
+
+  # Cloudflare credentials fayli
+  mkdir -p "$HOME/.secrets/certbot"
+  chmod 700 "$HOME/.secrets/certbot"
+  cat > "$HOME/.secrets/certbot/cloudflare.ini" <<CFINI
+dns_cloudflare_api_token = ${CF_API_TOKEN}
+CFINI
+  chmod 600 "$HOME/.secrets/certbot/cloudflare.ini"
+  ok "Cloudflare credentials yozildi"
+
+  # SSL sertifikat olish (DNS challenge — CF proxy yoqilgan bo'lsa ham ishlaydi)
+  sudo certbot certonly \
+    --dns-cloudflare \
+    --dns-cloudflare-credentials "$HOME/.secrets/certbot/cloudflare.ini" \
+    -d "$CF_AUTO_DOMAIN" \
+    --non-interactive \
+    --agree-tos \
+    -m "$CF_EMAIL"
+  ok "SSL sertifikat olindi: $CF_AUTO_DOMAIN"
+
+  # Nginx config (port 443 + 80→443 redirect)
+  sudo tee "/etc/nginx/sites-available/${SERVICE_NAME}" >/dev/null <<NGEOF
+server {
+    listen 443 ssl http2;
+    server_name ${CF_AUTO_DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${CF_AUTO_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CF_AUTO_DOMAIN}/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://${ENV_HOST}:${ENV_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_read_timeout 3600;
+    }
+}
+
+server {
+    listen 80;
+    server_name ${CF_AUTO_DOMAIN};
+    return 301 https://\$host\$request_uri;
+}
+NGEOF
+
+  sudo ln -sf "/etc/nginx/sites-available/${SERVICE_NAME}" \
+    "/etc/nginx/sites-enabled/${SERVICE_NAME}"
+  sudo nginx -t
+  sudo systemctl enable nginx
+  sudo systemctl restart nginx
+  ok "nginx ishga tushirildi"
+
+  # Auto-renewal
+  sudo systemctl enable certbot.timer 2>/dev/null || \
+    sudo systemctl enable certbot-renew.timer 2>/dev/null || true
+  ok "SSL auto-renewal yoqildi"
+
+  PUBLIC_URL="https://${CF_AUTO_DOMAIN}"
+
+# ── Option 2: Cloudflare Tunnel ──────────────────────────────
+elif [[ "$HTTPS_CHOICE" == "2" ]]; then
+  step "Cloudflare Tunnel o'rnatilmoqda"
+
   if ! command -v cloudflared >/dev/null 2>&1; then
-    c_dim "  Downloading cloudflared..."
+    c_dim "  cloudflared yuklanmoqda..."
     sudo curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
       -o /usr/local/bin/cloudflared
     sudo chmod +x /usr/local/bin/cloudflared
-    ok "cloudflared installed"
+    ok "cloudflared o'rnatildi"
   else
-    ok "cloudflared already installed ($(cloudflared --version 2>&1 | head -1))"
+    ok "cloudflared mavjud ($(cloudflared --version 2>&1 | head -1))"
   fi
 
-  ask "Your domain for VPS monitor (e.g. vps.example.com)" CF_DOMAIN
+  ask "Domeningiz (masalan: vps.example.com)" CF_DOMAIN
 
   echo
-  c_yellow "  ► Open the URL below in your browser and authorize Cloudflare:"
+  c_yellow "  ► Quyidagi URL ni brauzerda oching va Cloudflare ga kiring:"
   echo
   cloudflared tunnel login
   echo
-  ok "Cloudflare login complete"
+  ok "Cloudflare login amalga oshdi"
 
-  # Create tunnel (ignore error if already exists)
   TUNNEL_NAME="vps-monitor"
   if cloudflared tunnel list 2>/dev/null | grep -q "$TUNNEL_NAME"; then
-    warn "Tunnel '$TUNNEL_NAME' already exists — reusing it"
+    warn "Tunnel '$TUNNEL_NAME' mavjud — qayta ishlatilmoqda"
   else
     cloudflared tunnel create "$TUNNEL_NAME"
-    ok "Tunnel '$TUNNEL_NAME' created"
+    ok "Tunnel '$TUNNEL_NAME' yaratildi"
   fi
 
-  # Get tunnel ID
   TUNNEL_ID=$(cloudflared tunnel list 2>/dev/null \
     | grep "$TUNNEL_NAME" \
     | awk '{print $1}' \
     | head -1)
 
-  if [[ -z "$TUNNEL_ID" ]]; then
-    err "Could not get tunnel ID. Run: cloudflared tunnel list"
-  fi
+  [[ -z "$TUNNEL_ID" ]] && err "Tunnel ID topilmadi. Tekshiring: cloudflared tunnel list"
   ok "Tunnel ID: $TUNNEL_ID"
 
-  # Route DNS
   cloudflared tunnel route dns "$TUNNEL_NAME" "$CF_DOMAIN" 2>/dev/null || \
-    warn "DNS route may already exist — continuing"
-  ok "DNS routed: $CF_DOMAIN → tunnel"
+    warn "DNS route allaqachon mavjud — davom etilmoqda"
+  ok "DNS ulandi: $CF_DOMAIN → tunnel"
 
-  # Write config
   mkdir -p "$HOME/.cloudflared"
   cat > "$HOME/.cloudflared/config.yml" <<CFEOF
 tunnel: ${TUNNEL_NAME}
@@ -314,39 +388,31 @@ ingress:
     service: http://${ENV_HOST}:${ENV_PORT}
   - service: http_status:404
 CFEOF
-  ok "Cloudflare config written: ~/.cloudflared/config.yml"
+  ok "config.yml yozildi"
 
-  # Install as systemd service
   sudo cloudflared service install 2>/dev/null || true
   sudo systemctl enable cloudflared 2>/dev/null || true
   sudo systemctl restart cloudflared
-  ok "cloudflared systemd service started"
-
   sleep 2
-  if systemctl is-active --quiet cloudflared; then
-    ok "cloudflared: active"
-  else
-    warn "cloudflared service may not be running. Check: sudo journalctl -u cloudflared -n 30"
-  fi
+  systemctl is-active --quiet cloudflared && ok "cloudflared: active" || \
+    warn "cloudflared ishlamayapti. Tekshiring: sudo journalctl -u cloudflared -n 30"
 
   PUBLIC_URL="https://${CF_DOMAIN}"
 
-# ── Option 2: Nginx + Let's Encrypt ─────────────────────────
-elif [[ "$HTTPS_CHOICE" == "2" ]]; then
-  step "Setting up Nginx + Let's Encrypt"
+# ── Option 3: Nginx + Let's Encrypt ─────────────────────────
+elif [[ "$HTTPS_CHOICE" == "3" ]]; then
+  step "Nginx + Let's Encrypt"
 
-  c_dim "  Make sure your domain's A record points to this VPS IP before continuing."
-  c_dim "  Port 80 and 443 must be open in your firewall."
+  c_dim "  Cloudflare proxy (orange cloud) vaqtincha o'chirilgan bo'lishi kerak."
+  c_dim "  Port 80 va 443 VPS firewall da ochiq bo'lishi kerak."
   echo
-  ask "Your domain (e.g. vps.example.com)" LE_DOMAIN
-  ask "Your email for Let's Encrypt notices" LE_EMAIL
+  ask "Domeningiz (masalan: vps.example.com)" LE_DOMAIN
+  ask "Email (Let's Encrypt uchun)" LE_EMAIL
 
-  # Install nginx + certbot
   sudo apt-get update -qq
   sudo apt-get install -y nginx certbot python3-certbot-nginx >/dev/null
-  ok "nginx + certbot installed"
+  ok "nginx + certbot o'rnatildi"
 
-  # Write nginx config
   sudo tee "/etc/nginx/sites-available/${SERVICE_NAME}" >/dev/null <<NGEOF
 server {
     listen 80;
@@ -366,30 +432,21 @@ NGEOF
 
   sudo ln -sf "/etc/nginx/sites-available/${SERVICE_NAME}" \
     "/etc/nginx/sites-enabled/${SERVICE_NAME}"
+  sudo nginx -t && sudo systemctl reload nginx
+  ok "nginx sozlandi"
 
-  sudo nginx -t
-  sudo systemctl reload nginx
-  ok "nginx configured"
+  sudo certbot --nginx -d "$LE_DOMAIN" --non-interactive --agree-tos -m "$LE_EMAIL" --redirect
+  ok "SSL sertifikat olindi: $LE_DOMAIN"
 
-  # Get SSL certificate
-  sudo certbot --nginx \
-    -d "$LE_DOMAIN" \
-    --non-interactive \
-    --agree-tos \
-    -m "$LE_EMAIL" \
-    --redirect
-  ok "SSL certificate issued for $LE_DOMAIN"
-
-  # Auto-renewal check
   sudo systemctl enable certbot.timer 2>/dev/null || \
     sudo systemctl enable certbot-renew.timer 2>/dev/null || true
-  ok "Auto-renewal enabled"
+  ok "Auto-renewal yoqildi"
 
   PUBLIC_URL="https://${LE_DOMAIN}"
 
-# ── Option 3: Skip ───────────────────────────────────────────
+# ── Option 4: Skip ───────────────────────────────────────────
 else
-  warn "Skipping HTTPS setup. Set it up manually before connecting Telegram."
+  warn "HTTPS o'tkazib yuborildi. Telegram ga ulashdan oldin sozlang."
 fi
 
 # ────────────────────────────────────────────────────────────

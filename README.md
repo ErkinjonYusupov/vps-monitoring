@@ -1,162 +1,215 @@
 # Telegram VPS Monitor Mini App
 
-**Monitor your VPS, open an emergency terminal, and run Claude Code / Codex — straight from Telegram.**
+**VPS ni kuzating, favqulodda terminal oching va Claude Code ishlatib — bularning barchasini Telegram dan.**
 
-A lightweight, self-hosted Telegram Mini App for private server operators. Glassmorphism UI, mobile-first, Flask + vanilla JS — no build step, no framework lock-in.
+Yengil, o'z serveringizda ishlaydigan Telegram Mini App. Glassmorphism dizayn, mobil qurilmaga mo'ljallangan, Flask + vanilla JS — build qadami yo'q, framework bog'liqligi yo'q.
 
-> Best use case: **emergency access + small tasks**. For long/heavy interactive terminal work, SSH/desktop terminal is still the better tool.
+> Eng yaxshi foydalanish holati: **favqulodda kirish + kichik vazifalar**. Uzoq va og'ir terminal ishlari uchun SSH/desktop terminal hali ham yaxshiroq.
 
 <p align="center">
-    <img src="docs/screenshots/telegram-vps-menu.png" width="420" alt="Telegram VPS menu button" />
-   <img src="docs/screenshots/dashboard-mobile1.png" width="220" alt="Telegram VPS dashboard" />
-  <img src="docs/screenshots/dashboard-mobile.jpg" width="220" alt="Mobile VPS dashboard" />
+    <img src="docs/screenshots/telegram-vps-menu.png" width="420" alt="Telegram VPS menu tugmasi" />
+    <img src="docs/screenshots/dashboard-mobile1.png" width="220" alt="Telegram VPS dashboard" />
+    <img src="docs/screenshots/dashboard-mobile.jpg" width="220" alt="Mobil VPS dashboard" />
 </p>
 
 ---
 
-## What's new (v2026-05)
+## Yangiliklar (v2026-05)
 
-- 🎨 **Redesigned UI** — aurora gradient background, glassmorphism panels, gradient text on metrics, animated pulse status, shimmer skeleton loading
-- 🔐 **Fixed terminal auth** — terminal CTAs on home page now correctly forward Telegram `initData` via `?tg=` query param
-- ⚡ **Terminal CTAs on dashboard** — open Terminal or Claude Code without leaving the home view
-- 📱 **Better mobile typography** — tabular-nums, tuned letter-spacing, breakpoint at 380px
-- 🔍 **Visible health indicators** — animated pulse dot on status badges, shimmer skeleton until first metrics arrive
-
----
-
-## Why this exists
-
-Sometimes you only have your phone. You need to:
-
-- check whether the VPS is alive
-- inspect CPU/RAM/disk/load
-- restart or inspect a service
-- run a quick shell command
-- ask **Claude Code** to patch something
-- ask **Codex** to review/fix current changes
-- handle an urgent production issue before reaching your laptop
-
-This app puts that whole workflow behind a single Telegram Mini App button.
+- **Qayta ishlangan UI** — aurora gradient fon, glassmorphism panellar, metrikalar uchun gradient matn, animatsiyali status, skeleton yuklash
+- **Terminal autentifikatsiya tuzatildi** — bosh sahifadagi terminal tugmalari endi Telegram `initData` ni `?tg=` parametri orqali to'g'ri uzatadi
+- **Dashboard da terminal tugmalari** — bosh ko'rinishdan chiqmay Terminal yoki Claude Code ochish
+- **Yaxshilangan mobil tipografiya** — tabular-nums, sozlangan harf oraliqlari, 380px nuqtasi
+- **Ko'rinadigan holat indikatorlari** — status nishonlarida animatsiyali nuqta, birinchi metrikalar kelgunga qadar skeleton
 
 ---
 
-## Highlights
+## Nima uchun yaratilgan
 
-- 📊 **Mobile dashboard** — CPU (with ring + gradient text), RAM, disk, load, uptime, services, top processes
-- 📱 **Telegram Mini App** — opens from a `VPS` button inside Telegram
-- 🧠 **Claude Code from Telegram** — quick coding fixes, reviews, small edits
-- 🤖 **Codex from Telegram** — review/change tasks from a mobile terminal
-- 🖥️ **Web terminal** — PTY shell powered by xterm.js, mobile keyboard helpers
-- 🔐 **Telegram auth** — verifies `initData` HMAC + allowlists user ID
-- ⚡ **Lightweight** — Flask + vanilla JS, zero build step
-- 🧩 **Simple deployment** — gunicorn + systemd + HTTPS tunnel/domain
+Ba'zida faqat telefon qo'lingizda bo'ladi. Siz:
+
+- VPS tirikmi yoki yo'qmi tekshirishingiz kerak
+- CPU/RAM/disk/load ni ko'rishingiz kerak
+- Servisni qayta ishga tushirishingiz yoki tekshirishingiz kerak
+- Tez shell buyrug'i bajarishingiz kerak
+- **Claude Code** ga biror narsani tuzattirishingiz kerak
+- Noutbukka yetib borguncha shoshilinch muammoni hal qilishingiz kerak
+
+Bu ilova barcha ushbu ishni bitta Telegram Mini App tugmasi orqasiga joylashtiradi.
 
 ---
 
-## Stack
+## Asosiy xususiyatlar
+
+- **Mobil dashboard** — CPU (ring + gradient matn), RAM, disk, load, uptime, servislar, top jarayonlar
+- **Telegram Mini App** — Telegram ichidagi `VPS` tugmasidan ochiladi
+- **Telegram dan Claude Code** — tezkor kod tuzatish, ko'rib chiqish, kichik tahrirlash
+- **Web terminal** — xterm.js bilan ishlaydi, mobil klaviatura yordamchilari bilan
+- **Telegram autentifikatsiya** — `initData` HMAC tekshiruvi + foydalanuvchi ID ro'yxati
+- **Yengil** — Flask + vanilla JS, build qadami yo'q
+- **Oddiy joylashtirish** — gunicorn + systemd + HTTPS domen
+
+---
+
+## Texnologiyalar
 
 - Python 3.10+ Flask
 - Flask-Sock (WebSocket terminal)
-- Gunicorn (production)
-- Vanilla HTML/CSS/JS, xterm.js (vendored under `static/vendor/`)
-- glassmorphism CSS + SVG gradients
+- Gunicorn (ishlab chiqarish)
+- Vanilla HTML/CSS/JS, xterm.js (`static/vendor/` da)
+- Glassmorphism CSS + SVG gradientlar
 
 ---
 
-## Routes
+## Marshrutlar
 
-| Route | Description |
+| Marshrut | Tavsif |
 |---|---|
-| `/` | Glassmorphism dashboard (CPU/RAM/disk/services/processes) |
-| `/terminal` | PTY shell terminal (xterm.js) |
-| `/claude` | Terminal that auto-launches `claude` CLI |
-| `/codex` | Terminal that auto-launches `codex` CLI |
-| `/api/metrics` | JSON metrics endpoint |
-| `/ws/terminal` | WebSocket for terminal I/O |
+| `/` | Glassmorphism dashboard (CPU/RAM/disk/servislar/jarayonlar) |
+| `/terminal` | PTY shell terminali (xterm.js) |
+| `/claude` | `claude` CLI ni avtomatik ishga tushuradigan terminal |
+| `/codex` | `codex` CLI ni avtomatik ishga tushuradigan terminal |
+| `/api/metrics` | JSON metrikalar endpoint |
+| `/ws/terminal` | Terminal I/O uchun WebSocket |
 
 ---
 
-## Easy install (one-command)
+## Tez o'rnatish (bitta buyruq)
 
-For Ubuntu/Debian VPS. Run as the user that will own the service (typically `ubuntu` or your shell user — **not** root).
+Ubuntu/Debian VPS uchun. Servisga egalik qiluvchi foydalanuvchi sifatida ishga tushiring (`ubuntu` yoki shell foydalanuvchingiz — **root emas**).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/adryndian/telegram-vps-monitor-terminal-ai-miniapp/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ErkinjonYusupov/vps-monitoring/main/scripts/install.sh | bash
 ```
 
-> If the install script doesn't exist yet (this repo is still bootstrapping), use the **Manual install** below.
+Skript quyidagilarni bajaradi:
 
-The script will:
-
-1. Clone repo to `~/telegram-vps-monitor-terminal-ai-miniapp/`
-2. Create Python venv + install deps
-3. Copy `.env.example` → `.env` and prompt for required values
-4. Generate a strong random `DASHBOARD_PASSWORD`
-5. Create systemd service `telegram-vps-monitor.service`
-6. Start + enable the service
-7. Print next-step instructions for HTTPS tunnel + Telegram menu button
+1. Reponi `~/telegram-vps-monitor-terminal-ai-miniapp/` ga clone qiladi
+2. Python venv yaratadi + paketlarni o'rnatadi
+3. `.env.example` → `.env` ga ko'chiradi va kerakli qiymatlarni so'raydi
+4. Kuchli tasodifiy `DASHBOARD_PASSWORD` generatsiya qiladi
+5. `telegram-vps-monitor.service` systemd servisini yaratadi
+6. Servisni ishga tushiradi va yoqadi
+7. HTTPS sozlash variantlarini taklif qiladi (quyida batafsil)
+8. Telegram menu tugmasini avtomatik ulaydi
 
 ---
 
-## Manual install
+## HTTPS sozlash variantlari
 
-### 1. Clone & set up
+O'rnatish oxirida skript so'raydi:
+
+```
+1) Nginx + Cloudflare Auto-SSL  ★ (domen + API token → tayyor, tavsiya)
+2) Cloudflare Tunnel            (port ochiq bo'lishi shart emas)
+3) Nginx + Let's Encrypt        (port 80/443 ochiq, CF proxy vaqtincha o'chiq)
+4) Skip                         (keyinroq o'zingiz sozlaysiz)
+```
+
+### 1-variant — Nginx + Cloudflare Auto-SSL (tavsiya)
+
+Cloudflare DNS da A record bilan VPS IP ga ulangan domeningiz bo'lsa — eng qulay yo'l.
+
+**So'raladigan ma'lumotlar:**
+
+| Savol | Misol |
+|---|---|
+| Domeningiz | `vps.sizningdomen.uz` |
+| Cloudflare API Token | `****` (yashirin) |
+| Email | `siz@gmail.com` |
+
+**Cloudflare API Token olish:**
+1. `dash.cloudflare.com` → o'ng yuqori → **My Profile**
+2. **API Tokens** → **Create Token**
+3. **"Edit zone DNS"** shablonini tanlang
+4. **Zone Resources** → domeningizni tanlang
+5. **Create Token** → tokenni nusxalang
+
+Skript o'zi bajaradi: nginx o'rnatish, SSL sertifikat olish (DNS challenge orqali — CF proxy yoqilgan holda ham ishlaydi), auto-renewal yoqish.
+
+---
+
+### 2-variant — Cloudflare Tunnel
+
+Port ochish shart emas. VPS dan Cloudflare ga outbound ulanish.
+
+**So'raladigan ma'lumotlar:** domen, brauzerda Cloudflare login.
+
+```
+Foydalanuvchi → Cloudflare → Tunnel → VPS → Flask:8787
+```
+
+---
+
+### 3-variant — Nginx + Let's Encrypt
+
+Cloudflare proxy (orange cloud) ni sertifikat olish vaqtida vaqtincha o'chirish kerak.
+
+**So'raladigan ma'lumotlar:** domen, email.
+
+**Muhim:** Cloudflare DNS da A record → VPS IP bo'lishi va port 80/443 ochiq bo'lishi kerak.
+
+---
+
+## Qo'lda o'rnatish
+
+### 1. Clone va sozlash
 
 ```bash
-git clone https://github.com/adryndian/telegram-vps-monitor-terminal-ai-miniapp.git
-cd telegram-vps-monitor-terminal-ai-miniapp
+git clone https://github.com/ErkinjonYusupov/vps-monitoring.git
+cd vps-monitoring
 
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure
+### 2. Konfiguratsiya
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Minimum required:
+Minimal kerakli:
 
 ```env
-DASHBOARD_PASSWORD=<generate-strong-random>
-ALLOWED_TG_USER_ID=<your-numeric-telegram-user-id>
-TELEGRAM_BOT_TOKEN=<bot-father-token>
+DASHBOARD_PASSWORD=<kuchli-tasodifiy-parol>
+ALLOWED_TG_USER_ID=<sizning-telegram-raqamli-id>
+TELEGRAM_BOT_TOKEN=<botfather-token>
 TERMINAL_PASSWORD_FALLBACK=true
 HOST=127.0.0.1
 PORT=8787
 REFRESH_SECONDS=5
 ```
 
-To get your Telegram numeric user ID, message `@userinfobot` on Telegram.
+Telegram raqamli ID olish uchun `@userinfobot` ga xabar yuboring.
 
-### 3. Run
+### 3. Ishga tushirish
 
-**Dev:**
+**Development:**
 
 ```bash
 python app.py
 ```
 
-**Production:**
+**Ishlab chiqarish:**
 
 ```bash
 gunicorn -k gthread --threads 8 -b 127.0.0.1:8787 app:app
 ```
 
-Test locally: `http://127.0.0.1:8787` (use `DASHBOARD_PASSWORD` for basic auth).
+Lokal tekshirish: `http://127.0.0.1:8787` (`DASHBOARD_PASSWORD` bilan).
 
-### 4. Expose via HTTPS
+### 4. HTTPS ulash
 
-Telegram Mini Apps **require** public HTTPS. Pick one tunneling option below.
+Telegram Mini App lar **majburiy HTTPS** talab qiladi. Yuqoridagi variantlardan birini tanlang.
 
-### 5. Set the Telegram menu button
+### 5. Telegram menu tugmasini ulash
 
 ```bash
-BOT_TOKEN=<your-token>
-URL=https://your-domain.example
+BOT_TOKEN=<sizning-token>
+URL=https://sizningdomen.uz
 
 curl -X POST "https://api.telegram.org/bot$BOT_TOKEN/setChatMenuButton" \
   -H "Content-Type: application/json" \
@@ -169,68 +222,11 @@ curl -X POST "https://api.telegram.org/bot$BOT_TOKEN/setChatMenuButton" \
   }"
 ```
 
-Open Telegram → your bot → tap the `VPS` menu button → dashboard loads.
+Telegram → botingiz → `VPS` menu tugmasini bosing → dashboard ochiladi.
 
 ---
 
-## HTTPS tunneling options
-
-### Option A — Cloudflare Quick Tunnel (fastest test)
-
-```bash
-cloudflared tunnel --url http://127.0.0.1:8787 --no-autoupdate
-```
-
-Cloudflare prints a temporary `https://*.trycloudflare.com` URL. Good for testing, **not for production** (URL changes on restart).
-
-### Option B — Cloudflare Named Tunnel ⭐ recommended
-
-Always-on with your own domain.
-
-```bash
-cloudflared tunnel login
-cloudflared tunnel create vps-monitor
-cloudflared tunnel route dns vps-monitor vps.example.com
-```
-
-Create `~/.cloudflared/config.yml`:
-
-```yaml
-tunnel: vps-monitor
-credentials-file: /home/ubuntu/.cloudflared/<TUNNEL_ID>.json
-
-ingress:
-  - hostname: vps.example.com
-    service: http://127.0.0.1:8787
-  - service: http_status:404
-```
-
-Run:
-
-```bash
-cloudflared tunnel run vps-monitor
-```
-
-For auto-start: `sudo cloudflared service install`.
-
-### Option C — ngrok
-
-```bash
-ngrok config add-authtoken <NGROK_TOKEN>
-ngrok http --domain=your-static-domain.ngrok-free.app 8787
-```
-
-### Option D — Caddy / Nginx + domain
-
-```caddyfile
-vps.example.com {
-  reverse_proxy 127.0.0.1:8787
-}
-```
-
----
-
-## systemd service
+## Systemd servisi
 
 `/etc/systemd/system/telegram-vps-monitor.service`:
 
@@ -242,9 +238,9 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/telegram-vps-monitor-terminal-ai-miniapp
-EnvironmentFile=/home/ubuntu/telegram-vps-monitor-terminal-ai-miniapp/.env
-ExecStart=/home/ubuntu/telegram-vps-monitor-terminal-ai-miniapp/.venv/bin/gunicorn -k gthread --threads 8 -b 127.0.0.1:8787 app:app
+WorkingDirectory=/home/ubuntu/vps-monitoring
+EnvironmentFile=/home/ubuntu/vps-monitoring/.env
+ExecStart=/home/ubuntu/vps-monitoring/.venv/bin/gunicorn -k gthread --threads 8 -b 127.0.0.1:8787 app:app
 Restart=always
 RestartSec=5
 KillMode=mixed
@@ -253,7 +249,7 @@ KillMode=mixed
 WantedBy=multi-user.target
 ```
 
-Enable + start:
+Yoqish va ishga tushirish:
 
 ```bash
 sudo systemctl daemon-reload
@@ -264,38 +260,38 @@ sudo systemctl status telegram-vps-monitor
 
 ---
 
-## Environment reference
+## Muhit o'zgaruvchilari
 
-| Variable | Required | Description |
+| O'zgaruvchi | Majburiy | Tavsif |
 |---|---|---|
-| `DASHBOARD_PASSWORD` | ✅ | Fallback dashboard password (basic auth) |
-| `ALLOWED_TG_USER_ID` | ✅ | Numeric Telegram user ID — only this user passes Mini App auth |
-| `TELEGRAM_BOT_TOKEN` | ✅ | Bot token from @BotFather (used to verify `initData` HMAC) |
-| `TERMINAL_PIN` | optional | Extra PIN required to open `/terminal` |
-| `TERMINAL_PASSWORD_FALLBACK` | optional | `true` allows password-based terminal auth as fallback |
-| `HOST` | optional | Default `127.0.0.1` |
-| `PORT` | optional | Default `8787` |
-| `REFRESH_SECONDS` | optional | Dashboard auto-refresh interval, default `5` |
-| `ALERT_RAM_PCT` | optional | RAM alert threshold % |
-| `ALERT_DISK_PCT` | optional | Disk alert threshold % |
-| `ALERT_LOAD_PER_CORE` | optional | Load average per-core alert threshold |
-| `TELEGRAM_CHAT_ID` | optional | For optional bot-driven alert delivery |
+| `DASHBOARD_PASSWORD` | ✅ | Dashboard paroli (basic auth) |
+| `ALLOWED_TG_USER_ID` | ✅ | Telegram raqamli ID — faqat shu foydalanuvchi kiradi |
+| `TELEGRAM_BOT_TOKEN` | ✅ | @BotFather dan token (`initData` HMAC tekshiruvi uchun) |
+| `TERMINAL_PIN` | ixtiyoriy | `/terminal` ochishda qo'shimcha PIN |
+| `TERMINAL_PASSWORD_FALLBACK` | ixtiyoriy | `true` — parol bilan ham terminal kirishi |
+| `HOST` | ixtiyoriy | Default `127.0.0.1` |
+| `PORT` | ixtiyoriy | Default `8787` |
+| `REFRESH_SECONDS` | ixtiyoriy | Dashboard yangilanish intervali, default `5` |
+| `ALERT_RAM_PCT` | ixtiyoriy | RAM alert chegarasi (%) |
+| `ALERT_DISK_PCT` | ixtiyoriy | Disk alert chegarasi (%) |
+| `ALERT_LOAD_PER_CORE` | ixtiyoriy | Core boshiga load alert chegarasi |
+| `TELEGRAM_CHAT_ID` | ixtiyoriy | Bot orqali alert yuborish uchun |
 
-See `.env.example` for the full list.
+To'liq ro'yxat uchun `.env.example` ga qarang.
 
 ---
 
-## Update existing install
+## Yangilash
 
 ```bash
-cd ~/telegram-vps-monitor-terminal-ai-miniapp
+cd ~/vps-monitoring
 git pull origin main
 . .venv/bin/activate
 pip install -r requirements.txt
 sudo systemctl restart telegram-vps-monitor
 ```
 
-Verify:
+Tekshirish:
 
 ```bash
 curl -s -o /dev/null -w 'HTTP:%{http_code}\n' http://127.0.0.1:8787/
@@ -304,79 +300,19 @@ sudo systemctl status telegram-vps-monitor --no-pager
 
 ---
 
-## Ask an AI agent to install this app
-
-Paste this into Claude Code, Codex, OpenClaw, Cursor, or another coding agent with VPS shell access.
-
-````text
-Install and configure Telegram VPS Monitor Mini App on this Linux VPS.
-
-Repository:
-https://github.com/adryndian/telegram-vps-monitor-terminal-ai-miniapp
-
-Goal:
-Create a private Telegram Mini App that lets me monitor the VPS and run
-emergency/small-task terminal sessions, including Claude Code and Codex,
-directly from Telegram.
-
-Requirements:
-1. Clone repo to ~/telegram-vps-monitor-terminal-ai-miniapp.
-2. Create Python venv and install requirements.txt.
-3. Create .env from .env.example.
-4. Ask me for:
-   - Telegram bot token
-   - my Telegram numeric user ID
-   - preferred public HTTPS method (Cloudflare Tunnel / ngrok / domain reverse proxy)
-5. Generate a strong random DASHBOARD_PASSWORD.
-6. Set ALLOWED_TG_USER_ID and TELEGRAM_BOT_TOKEN to the values I provided.
-7. Set TERMINAL_PASSWORD_FALLBACK=true.
-8. Create systemd service `telegram-vps-monitor.service` running:
-   gunicorn -k gthread --threads 8 -b 127.0.0.1:8787 app:app
-9. Enable + start the service.
-10. Verify http://127.0.0.1:8787/api/metrics returns 200 with JSON.
-11. Set up HTTPS tunnel/reverse proxy (Cloudflare named tunnel preferred).
-12. Call Telegram Bot API setChatMenuButton with text "VPS" and the HTTPS URL.
-13. Test by opening the Mini App from Telegram on my phone.
-14. Do not commit or print secrets. Show only masked credentials.
-
-Security:
-- Never expose the app over plain HTTP publicly.
-- Never commit .env.
-- Terminal routes (/terminal, /claude, /codex) must only work for the
-  allowlisted Telegram user (ALLOWED_TG_USER_ID).
-````
-
-### Maintenance prompt
-
-````text
-Update my Telegram VPS Monitor Mini App safely.
-
-Tasks:
-1. cd to ~/telegram-vps-monitor-terminal-ai-miniapp.
-2. git status and show me local changes before overwriting anything.
-3. git pull origin main.
-4. Preserve .env.
-5. Reinstall requirements if changed.
-6. Restart the systemd service.
-7. Verify /api/metrics, /, /terminal, /claude, /codex routes return expected status.
-8. Confirm Telegram Mini App URL still works (curl -I against the public URL).
-9. Do not reveal bot token, dashboard password, or tunnel credentials.
-````
-
----
-
-## Architecture overview
+## Arxitektura
 
 ```
 ┌─────────────────┐
-│ Telegram client │  ← Mini App opened from VPS menu button
+│ Telegram client │  ← VPS menu tugmasidan ochilgan Mini App
 └────────┬────────┘
-         │ HTTPS (Cloudflare Tunnel / domain)
+         │ HTTPS (Cloudflare / Nginx)
          ▼
 ┌─────────────────┐
 │ Flask app:8787  │  ← gunicorn + systemd
-│  ├── /          │  ← glassmorphism dashboard (templates/index.html)
-│  ├── /terminal  │  ← xterm.js terminal page
+│  ├── /          │  ← glassmorphism dashboard
+│  ├── /terminal  │  ← xterm.js terminal sahifasi
+│  ├── /claude    │  ← Claude Code terminal
 │  ├── /api/metrics
 │  └── /ws/terminal (WebSocket → PTY)
 └────────┬────────┘
@@ -385,78 +321,76 @@ Tasks:
    /proc, ps, systemctl, df, free, uptime
 ```
 
-**Auth flow:**
+**Autentifikatsiya jarayoni:**
 
-1. Telegram client opens Mini App → `Telegram.WebApp.initData` available
-2. Frontend attaches `initData` as `X-Telegram-Init-Data` header (dashboard) or `?tg=` query param (terminal links)
-3. Backend `auth_ok()` verifies HMAC with `TELEGRAM_BOT_TOKEN` + checks user ID matches `ALLOWED_TG_USER_ID`
-4. Falls back to `DASHBOARD_PASSWORD` basic auth for non-Telegram clients
+1. Telegram client Mini App ni ochadi → `Telegram.WebApp.initData` mavjud
+2. Frontend `initData` ni `X-Telegram-Init-Data` header (dashboard) yoki `?tg=` parametr (terminal) sifatida yuboradi
+3. Backend `auth_ok()` HMAC ni `TELEGRAM_BOT_TOKEN` bilan tekshiradi + foydalanuvchi ID `ALLOWED_TG_USER_ID` ga mos kelishini tekshiradi
+4. Telegram bo'lmagan mijozlar uchun `DASHBOARD_PASSWORD` basic auth ga qaytadi
 
 ---
 
-## Troubleshooting
+## Muammolarni bartaraf etish
 
-### Dashboard shows AUTH FAILED
+### Dashboard "AUTH FAILED" ko'rsatmoqda
 
-- Confirm `TELEGRAM_BOT_TOKEN` matches the bot whose menu button points here
-- Confirm `ALLOWED_TG_USER_ID` is **your** numeric ID (not the bot's)
-- Open from Telegram, not directly from a browser
+- `TELEGRAM_BOT_TOKEN` menu tugmasi ko'rsatayotgan bot tokeni bilan mos kelishini tekshiring
+- `ALLOWED_TG_USER_ID` **sizning** raqamli ID ingiz ekanligini tekshiring (bot ID emas)
+- Brauzerdan emas, Telegram orqali oching
 
-### Terminal opens but shows `Unauthorized`
+### Terminal ochiladi, lekin "Unauthorized" ko'rinadi
 
-- This was a bug pre-v2026-05 — pull latest `main` and restart
-- Verify `app.py` line 58 includes `or request.args.get('tg','')` in `auth_ok()`
+- v2026-05 gacha bo'lgan bug — oxirgi `main` ni pull qiling va qayta ishga tushiring
+- `app.py` 58-qatorda `auth_ok()` da `or request.args.get('tg','')` borligini tekshiring
 
-### Mini App won't load on Telegram
+### Mini App Telegram da yuklanmaydi
 
-- Telegram requires **HTTPS**; HTTP URLs silently fail
-- Check tunnel is up: `curl -I https://your-domain.example`
-- Verify menu button: `curl https://api.telegram.org/bot$BOT_TOKEN/getChatMenuButton`
+- Telegram **HTTPS** talab qiladi; HTTP URL lar jimgina ishlamaydi
+- Nginx yoki tunnel ishlayotganini tekshiring: `curl -I https://sizningdomen.uz`
+- Menu tugmasini tekshiring: `curl https://api.telegram.org/bot$BOT_TOKEN/getChatMenuButton`
 
-### Service won't start
+### Servis ishga tushmaydi
 
 ```bash
 sudo journalctl -u telegram-vps-monitor -n 50 --no-pager
 ```
 
-Common causes: `.env` not loaded → check `EnvironmentFile=` path; venv path wrong; port already in use.
+Keng tarqalgan sabablar: `.env` yuklanmagan → `EnvironmentFile=` yo'lini tekshiring; venv yo'li noto'g'ri; port band.
 
-### Terminal says `disconnected` immediately
+### Terminal darhol "disconnected" deydi
 
-- Cloudflare tunnel may strip WebSocket upgrade — verify ingress config doesn't block `/ws/terminal`
-- For `cloudflared`, WebSockets work by default; for nginx, add `proxy_http_version 1.1` + `Upgrade` headers
-
----
-
-## Security checklist
-
-- [ ] `.env` is gitignored (never commit credentials)
-- [ ] App is **only** exposed via HTTPS
-- [ ] `ALLOWED_TG_USER_ID` is set to your numeric Telegram ID
-- [ ] `DASHBOARD_PASSWORD` is a strong random string (≥ 24 chars)
-- [ ] `TERMINAL_PASSWORD_FALLBACK` enabled only if you understand the trade-off
-- [ ] Tunnel credentials (Cloudflare/ngrok) are stored outside the repo
-- [ ] Don't share screenshots that include public tunnel URLs
-- [ ] **Remember:** terminal access = full VPS shell access. Treat the auth setup as critical.
+- Nginx WebSocket uchun `proxy_http_version 1.1` + `Upgrade` headerlarini tekshiring
+- Cloudflare Tunnel uchun WebSocket default ishlaydi
 
 ---
 
-## Contributing
+## Xavfsizlik tekshiruvi
 
-PRs welcome for:
-
-- Additional metrics (network I/O, GPU stats, Docker container summaries)
-- More tunnel provider docs (Tailscale, FRP, Bore)
-- Mobile keyboard improvements for the terminal
-- Translation/i18n
-
-Keep the spirit: **lightweight, no build step, no framework lock-in**.
+- [ ] `.env` gitignore da (hech qachon commit qilmang)
+- [ ] Ilova faqat HTTPS orqali ochiq
+- [ ] `ALLOWED_TG_USER_ID` sizning raqamli Telegram ID ingiz
+- [ ] `DASHBOARD_PASSWORD` kuchli tasodifiy qator (≥ 24 belgi)
+- [ ] `TERMINAL_PASSWORD_FALLBACK` faqat kerak bo'lganda yoqilgan
+- [ ] Cloudflare API token repoda saqlanmagan
+- [ ] Umumiy URL larni o'z ichiga olgan skrinshot larni ulashmang
+- [ ] **Esda tuting:** terminal kirish = to'liq VPS shell kirishi. Autentifikatsiya sozlamasini jiddiy qabul qiling.
 
 ---
 
-## License
+## Hissa qo'shish
 
-MIT — see `LICENSE`.
+PRlar quyidagular uchun qabul qilinadi:
 
-Built for solo developers and small teams who need a quick mobile lifeline to their VPS.
-# vps-monitoring
+- Qo'shimcha metrikalar (tarmoq I/O, GPU statistikasi, Docker konteyner xulosalari)
+- Mobil klaviatura yaxshilanishlari
+- Tarjima/i18n
+
+Ruh: **yengil, build qadami yo'q, framework bog'liqligi yo'q**.
+
+---
+
+## Litsenziya
+
+MIT — `LICENSE` ga qarang.
+
+Faqat telefoni bor bo'lganda VPS ga tezkor mobil kirish kerak bo'lgan dasturchilar va kichik jamoalar uchun yaratilgan.
