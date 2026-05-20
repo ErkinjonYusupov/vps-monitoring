@@ -81,10 +81,14 @@ if [[ "$PYV_MAJOR" -lt 3 ]] || { [[ "$PYV_MAJOR" -eq 3 ]] && [[ "$PYV_MINOR" -lt
 fi
 ok "Python $PYV"
 
-if ! python3 -c 'import venv' 2>/dev/null; then
+PY_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
+if ! python3 -m venv --without-pip /tmp/_venv_test >/dev/null 2>&1; then
   warn "python3-venv missing, installing..."
-  sudo apt-get update -qq && sudo apt-get install -y python3-venv >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y "python3.${PY_MINOR}-venv" python3-venv >/dev/null 2>&1 || \
+    sudo apt-get install -y python3-venv >/dev/null
 fi
+rm -rf /tmp/_venv_test
 ok "python3-venv available"
 
 if ! sudo -n true 2>/dev/null; then
