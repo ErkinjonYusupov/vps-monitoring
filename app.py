@@ -134,9 +134,9 @@ def metrics():
     up=float(open('/proc/uptime').read().split()[0])
     cp=cpu_pct(); rp=round(used/mt*100,1); dp=round(du.used/du.total*100,1); lpc=round(load[0]/cores,2)
     services=[
-        svc_status('Hermes Bot', 'pgrep -f "hermes_cli.main gateway" >/dev/null'),
-        svc_status('9Router', 'curl -fsS --max-time 2 http://127.0.0.1:20128 >/dev/null'),
-        svc_status('Dashboard', 'pgrep -f "python app.py" >/dev/null')
+        svc_status('VPS Monitor', 'pgrep -f "gunicorn" >/dev/null'),
+        svc_status('Docker', 'systemctl is-active docker >/dev/null 2>&1'),
+        svc_status('SSH', 'systemctl is-active ssh >/dev/null 2>&1 || systemctl is-active sshd >/dev/null 2>&1'),
     ]
     alerts=[]
     if rp>=75: alerts.append(f'RAM {rp}%')
@@ -214,7 +214,7 @@ def ws_terminal(ws):
         os.execv(argv[0], argv)
     try:
         fcntl.fcntl(fd, fcntl.F_SETFL, os.O_NONBLOCK)
-        ws.send('\r\nConnected. Type `claude` to open Claude Code, or use /claude.\r\n\r\n')
+        ws.send('\r\nUlandi. Claude Code ochish uchun `claude` yozing.\r\n\r\n')
         while True:
             r,_,_ = select.select([fd], [], [], 0.05)
             if fd in r:
