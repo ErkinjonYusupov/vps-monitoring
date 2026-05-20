@@ -48,9 +48,9 @@
       </div>
     </div>
     <div class="miniStats">
-      <div class="chip"><b id="cores">-</b><span class="sub">Yadrolar</span></div>
-      <div class="chip"><b id="uptime">-</b><span class="sub">Ishlash vaqti</span></div>
-      <div class="chip"><b id="refresh">-</b><span class="sub">Yangilanish</span></div>
+      <div class="chip"><b id="cores">-</b><span class="sub">⚡ Yadro</span></div>
+      <div class="chip"><b id="uptime">-</b><span class="sub">⏱ Vaqt</span></div>
+      <div class="chip"><b id="refresh">-</b><span class="sub">↻ Yangi</span></div>
     </div>
     <div id="alerts" class="alerts"></div>
   </section>
@@ -145,7 +145,7 @@ async function load(){
     $('health').textContent=m.health.label;$('health').className='status '+m.health.level;
 
     $('cpu').textContent=m.cpu.pct+'%';unskel($('cpu'));
-    $('load').textContent=`load ${m.cpu.load1} / ${m.cpu.load5} / ${m.cpu.load15} • ${m.cpu.load_per_core}/yadro`;
+    $('load').textContent=`${m.cpu.load1} · ${m.cpu.load5} · ${m.cpu.load15}`;
     ring(m.cpu.pct);
 
     $('cores').textContent=m.cpu.cores;

@@ -214,6 +214,11 @@ body::after{
   line-height:1.4;
   font-variant-numeric:tabular-nums;
 }
+#load{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 
 .ringWrap{
   width:108px;height:108px;
