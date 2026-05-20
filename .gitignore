@@ -1,0 +1,59 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+.dashboard_password
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.eggs/
+*.egg-info/
+.pytest_cache/
+
+# Backups
+*.bak
+*.bak.*
+*.backup
+
+# macOS metadata
+.DS_Store
+._*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build/install artifacts
+cloudflared.deb
+*.deb
+*.tgz
+*.tar.gz
+node_modules/
+
+# Local status / setup notes (non-source clutter)
+READY.txt
+STATUS.txt
+SETUP-DOMAIN.md
+SETUP-PERMANENT-DOMAIN.txt
+NEXT-STEPS.txt
+
+# Local scripts (committed scripts go in scripts/)
+setup-domain-tunnel.sh
+setup-permanent-tunnel.sh
+
+# Logs
+*.log
+logs/
+nohup.out
+
+# Runtime
+*.pid
+*.sock

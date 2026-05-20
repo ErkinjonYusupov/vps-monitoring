@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VPS Monitor</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="/static/style.css?v=20260519r2">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7ba9ff"/>
+      <stop offset="100%" stop-color="#b48dff"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">E</div>
+      <div style="min-width:0">
+        <h1>VPS Monitor</h1>
+        <p>
+          <span id="host">Connecting…</span>
+          <button id="maskBtn" class="maskBtn" onclick="toggleMask()">Hide</button>
+        </p>
+      </div>
+    </div>
+    <div id="health" class="status">CHECK</div>
+  </div>
+
+  <section class="hero">
+    <div class="heroHead">
+      <div>
+        <div class="metricLabel">CPU usage</div>
+        <div id="cpu" class="cpuBig skel">--%</div>
+        <div id="load" class="sub">load --</div>
+      </div>
+      <div class="ringWrap">
+        <svg viewBox="0 0 120 120">
+          <circle class="ringBg" cx="60" cy="60" r="50"/>
+          <circle id="cpuRing" class="ringVal" cx="60" cy="60" r="50" stroke-dasharray="314" stroke-dashoffset="314"/>
+        </svg>
+      </div>
+    </div>
+    <div class="miniStats">
+      <div class="chip"><b id="cores">-</b><span class="sub">Cores</span></div>
+      <div class="chip"><b id="uptime">-</b><span class="sub">Uptime</span></div>
+      <div class="chip"><b id="refresh">-</b><span class="sub">Refresh</span></div>
+    </div>
+    <div id="alerts" class="alerts"></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Memory</h3>
+      <div id="ram" class="value skel">--%</div>
+      <div id="ramBarBox" class="bar"><i id="ramBar"></i></div>
+      <p id="ramd" class="sub">-</p>
+    </div>
+    <div class="card">
+      <h3>Storage</h3>
+      <div id="disk" class="value skel">--%</div>
+      <div id="diskBarBox" class="bar"><i id="diskBar"></i></div>
+      <p id="diskd" class="sub">-</p>
+    </div>
+  </section>
+
+  <div class="termBtns">
+    <button class="termBtn" type="button" onclick="openTerm()">⌨ Terminal</button>
+    <button class="termBtn claude" type="button" onclick="openTerm('claude')">✦ Claude</button>
+  </div>
+
+  <section class="panel">
+    <div class="panelTop"><h3>Services</h3><small>live</small></div>
+    <div id="svc"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panelTop"><h3>Top Processes</h3><small>cpu</small></div>
+    <div id="top"></div>
+  </section>
+
+  <div class="footer">
+    <span class="dot-live"></span>
+    <span>Internal</span>
+    <span>•</span>
+    <span id="ts">-</span>
+  </div>
+
+</div>
+
+<script>
+const REFRESH={{refresh}};
+const $=id=>document.getElementById(id);
+let HOST_RAW='',HOST_MASKED=true;
+
+let TELEGRAM_INIT_DATA = '';
+if(window.Telegram && Telegram.WebApp){
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+  Telegram.WebApp.setHeaderColor('#06070d');
+  Telegram.WebApp.setBackgroundColor('#06070d');
+  TELEGRAM_INIT_DATA = Telegram.WebApp.initData || '';
+  console.log('[TG] initData captured, length:', TELEGRAM_INIT_DATA.length);
+}
+
+function maskHost(h){return h.replace(/(ip-)?.*/, 'ip-***-***-***-***')}
+function renderHost(){$('host').textContent=HOST_MASKED?maskHost(HOST_RAW):HOST_RAW;$('maskBtn').textContent=HOST_MASKED?'Show':'Hide'}
+function toggleMask(){HOST_MASKED=!HOST_MASKED;localStorage.setItem('vps_host_mask',HOST_MASKED?'1':'0');renderHost()}
+HOST_MASKED=localStorage.getItem('vps_host_mask')!=='0';
+
+function ring(p){
+  const v=Math.min(p,100);
+  $('cpuRing').style.strokeDashoffset=314-(314*v/100);
+}
+function bar(id,p,lvl){
+  $(id+'Bar').style.width=Math.min(p,100)+'%';
+  $(id+'BarBox').className='bar '+(lvl||'');
+}
+function unskel(el){el.classList.remove('skel')}
+
+function openTerm(mode){
+  const route = mode==='claude' ? '/claude' : '/terminal';
+  const url = TELEGRAM_INIT_DATA
+    ? `${route}?tg=${encodeURIComponent(TELEGRAM_INIT_DATA)}`
+    : route;
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink){
+    location.href = url;
+  } else {
+    location.href = url;
+  }
+}
+
+async function load(){
+  try{
+    let r=await fetch('/api/metrics',{headers:{'X-Telegram-Init-Data':TELEGRAM_INIT_DATA}});
+    if(r.status===401){
+      $('health').textContent='AUTH FAILED';$('health').className='status danger';
+      return;
+    }
+    let m=await r.json();
+    HOST_RAW=m.host;renderHost();
+    $('health').textContent=m.health.label;$('health').className='status '+m.health.level;
+
+    $('cpu').textContent=m.cpu.pct+'%';unskel($('cpu'));
+    $('load').textContent=`load ${m.cpu.load1} / ${m.cpu.load5} / ${m.cpu.load15} • ${m.cpu.load_per_core}/core`;
+    ring(m.cpu.pct);
+
+    $('cores').textContent=m.cpu.cores;
+    $('uptime').textContent=m.uptime.split(' ').slice(0,2).join(' ');
+    $('refresh').textContent=REFRESH+'s';
+
+    $('ram').textContent=m.ram.pct+'%';unskel($('ram'));
+    $('ramd').textContent=`${m.ram.used_gb} GB used • ${m.ram.avail_gb} GB free`;
+    bar('ram',m.ram.pct,m.ram.level);
+
+    $('disk').textContent=m.disk.pct+'%';unskel($('disk'));
+    $('diskd').textContent=`${m.disk.used_gb} GB used • ${m.disk.free_gb} GB free`;
+    bar('disk',m.disk.pct,m.disk.level);
+
+    $('alerts').className='alerts '+(m.health.alerts.length?'show':'');
+    $('alerts').textContent=m.health.alerts.join(' • ');
+
+    let svc='';
+    for(let s of m.services){
+      svc+=`<div class="svcRow ${s.status}"><b>${s.name}</b><span>${s.status}</span></div>`;
+    }
+    $('svc').innerHTML=svc;
+
+    let top='';
+    for(let p of m.top){
+      top+=`<div class="procRow"><span class="pid">${p.pid}</span><b>${p.cmd}</b><span class="pct">${p.cpu}%</span><span class="pct">${p.mem}%</span></div>`;
+    }
+    $('top').innerHTML=top;
+
+    $('ts').textContent=new Date().toLocaleTimeString();
+  }catch(e){
+    console.error('[LOAD] Error:', e);
+    $('health').textContent='ERROR';$('health').className='status danger';
+  }
+}
+
+load();
+setInterval(load, REFRESH*1000);
+</script>
+</body>
+</html>
