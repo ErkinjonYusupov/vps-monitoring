@@ -475,6 +475,25 @@ body::after{
 .termBtn.claude{background:linear-gradient(135deg,#b48dff,#e0b6ff)}
 .termBtn:active{transform:scale(.97)}
 
+/* ---------- UPDATE BUTTON ---------- */
+.updateBtn{
+  display:block;
+  width:100%;
+  padding:14px;
+  margin-bottom:12px;
+  border-radius:var(--radius-md);
+  background:rgba(40,70,40,.45);
+  border:1px solid rgba(61,220,151,.25);
+  color:#fff;
+  font-weight:800;
+  font-size:13px;
+  letter-spacing:.04em;
+  cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.updateBtn:active{transform:scale(.98);opacity:.85}
+.updateBtn:disabled{opacity:.5;cursor:default}
+
 /* ---------- FOOTER ---------- */
 .footer{
   text-align:center;
