@@ -394,3 +394,25 @@ Ruh: **yengil, build qadami yo'q, framework bog'liqligi yo'q**.
 MIT — `LICENSE` ga qarang.
 
 Faqat telefoni bor bo'lganda VPS ga tezkor mobil kirish kerak bo'lgan dasturchilar va kichik jamoalar uchun yaratilgan.
+
+
+ # Servisi to'xtatish va o'chirish
+  sudo systemctl stop telegram-vps-monitor
+  sudo systemctl disable telegram-vps-monitor
+  sudo rm /etc/systemd/system/telegram-vps-monitor.service
+  sudo systemctl daemon-reload
+
+  # Sudoers qoidasini o'chirish
+  sudo rm -f /etc/sudoers.d/vps-monitor
+
+  # SSL sertifikatni o'chirish
+  sudo certbot delete --cert-name vps.rizometal.uz
+
+  # Cloudflare credentials o'chirish
+  rm -rf ~/.secrets/certbot
+
+  # Loyiha papkasini o'chirish
+  rm -rf ~/telegram-vps-monitor-terminal-ai-miniapp
+
+  # Traefik config faylini o'chirish
+  sudo rm -f /etc/dokploy/traefik/dynamic/vps-monitor.yml
