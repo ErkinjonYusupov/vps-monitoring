@@ -35,10 +35,10 @@ ask() {
   local prompt="$1" var_name="$2" default="${3:-}"
   local value
   if [[ -n "$default" ]]; then
-    read -rp "  $prompt [$default]: " value
+    read -rp "  $prompt [$default]: " value </dev/tty
     value="${value:-$default}"
   else
-    read -rp "  $prompt: " value
+    read -rp "  $prompt: " value </dev/tty
   fi
   printf -v "$var_name" '%s' "$value"
 }
@@ -46,7 +46,7 @@ ask() {
 ask_secret() {
   local prompt="$1" var_name="$2"
   local value
-  read -rsp "  $prompt: " value
+  read -rsp "  $prompt: " value </dev/tty
   echo
   printf -v "$var_name" '%s' "$value"
 }
@@ -118,7 +118,8 @@ cd "$INSTALL_DIR"
 # ────────────────────────────────────────────────────────────
 step "Setting up Python environment"
 
-if [[ ! -d ".venv" ]]; then
+if [[ ! -f ".venv/bin/activate" ]]; then
+  rm -rf .venv
   python3 -m venv .venv
   ok "Created venv"
 fi
@@ -254,7 +255,7 @@ echo "  2) Cloudflare Tunnel            (port ochiq bo'lishi shart emas)"
 echo "  3) Nginx + Let's Encrypt        (port 80/443 ochiq, CF proxy o'chiq bo'lishi kerak)"
 echo "  4) Skip                         (keyinroq o'zingiz sozlaysiz)"
 echo
-read -rp "  Your choice [1/2/3/4]: " HTTPS_CHOICE
+read -rp "  Your choice [1/2/3/4]: " HTTPS_CHOICE </dev/tty
 HTTPS_CHOICE="${HTTPS_CHOICE:-1}"
 
 PUBLIC_URL=""
